@@ -32,7 +32,7 @@ pipeline {
 
                     test -f manage.py
                     test -d polls
-                   
+                    test -f requirements.txt
 
                     echo "Required files found."
                     ls -la
@@ -66,7 +66,7 @@ pipeline {
                     set -e
 
                     rm -rf "$WEB_ROOT"/*
-                    cp -r * "$WEB_ROOT"/
+                    sudo cp -r * "$WEB_ROOT"/
 
                     echo "Deployed files:"
                     ls -la "$WEB_ROOT"
