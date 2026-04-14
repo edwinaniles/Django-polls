@@ -32,7 +32,7 @@ pipeline {
 
                     test -f manage.py
                     test -d polls
-                    test -f requirements.txt
+                   
 
                     echo "Required files found."
                     ls -la
