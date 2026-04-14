@@ -14,16 +14,14 @@ pipeline {
     options {
         timestamps()
     }
- stages {
 
-        //  PUT IT HERE (FIRST STAGE)
+    stages {
+
         stage('Clean Workspace') {
             steps {
                 deleteDir()
             }
         }
-
-    stages {
 
         stage('Checkout') {
             steps {
@@ -33,24 +31,19 @@ pipeline {
         }
 
         stage('Verify Project Files') {
-    steps {
-        sh '''
-            set -e
-            echo "Current directory:"
-            pwd
+            steps {
+                sh '''
+                    set -e
+                    pwd
+                    ls -la
+                    ls -l requirements.txt || true
 
-            echo "Listing all files:"
-            ls -la
-
-            echo "Checking requirements.txt explicitly:"
-            ls -l requirements.txt || true
-
-            test -f manage.py
-            test -d polls
-            test -f requirements.txt
-        '''
-    }
-}
+                    test -f manage.py
+                    test -d polls
+                    test -f requirements.txt
+                '''
+            }
+        }
 
         stage('Install Nginx and Python') {
             steps {
@@ -76,12 +69,8 @@ pipeline {
             steps {
                 sh '''
                     set -e
-
                     rm -rf "$WEB_ROOT"/*
                     sudo cp -r * "$WEB_ROOT"/
-
-                    echo "Deployed files:"
-                    ls -la "$WEB_ROOT"
                 '''
             }
         }
@@ -109,7 +98,6 @@ pipeline {
                     cd "$WEB_ROOT"
 
                     . venv/bin/activate
-
                     python manage.py migrate
                     python manage.py collectstatic --noinput || true
                 '''
@@ -124,7 +112,7 @@ pipeline {
 
                     pkill -f "manage.py runserver" || true
 
-                    nohup "$WEB_ROOT"/venv/bin/python manage.py runserver 0.0.0.0:8000 --noreload > django.log 2>&1 &
+                    nohup venv/bin/python manage.py runserver 0.0.0.0:8000 --noreload > django.log 2>&1 &
 
                     sleep 5
                     curl http://127.0.0.1:8000 || true
@@ -136,6 +124,7 @@ pipeline {
             steps {
                 sh '''
                     set -e
+
                     sudo tee "$NGINX_CONF" > /dev/null <<EOF
 server {
     listen 80;
@@ -147,17 +136,16 @@ server {
 
     location / {
         proxy_pass http://127.0.0.1:8000;
-        proxy_set_header Host \\$host;
-        proxy_set_header X-Real-IP \\$remote_addr;
-        proxy_set_header X-Forwarded-For \\$proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto \\$scheme;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
     }
 }
 EOF
 
                     sudo ln -sf "$NGINX_CONF" /etc/nginx/sites-enabled/Django-polls
                     sudo rm -f /etc/nginx/sites-enabled/default || true
-
                     sudo nginx -t
                 '''
             }
@@ -186,7 +174,6 @@ EOF
     post {
         success {
             echo 'Deployment successful.'
-            echo 'Open your EC2 public IP in a browser to view the site.'
         }
         failure {
             echo 'Deployment failed. Check Jenkins console output.'
