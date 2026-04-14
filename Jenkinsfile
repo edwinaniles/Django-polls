@@ -14,6 +14,14 @@ pipeline {
     options {
         timestamps()
     }
+ stages {
+
+        //  PUT IT HERE (FIRST STAGE)
+        stage('Clean Workspace') {
+            steps {
+                deleteDir()
+            }
+        }
 
     stages {
 
