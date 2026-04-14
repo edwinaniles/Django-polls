@@ -25,20 +25,24 @@ pipeline {
         }
 
         stage('Verify Project Files') {
-            steps {
-                sh '''
-                    set -e
-                    echo "Checking required Django project files..."
+    steps {
+        sh '''
+            set -e
+            echo "Current directory:"
+            pwd
 
-                    test -f manage.py
-                    test -d polls
-                    test -f requirements.txt
+            echo "Listing all files:"
+            ls -la
 
-                    echo "Required files found."
-                    ls -la
-                '''
-            }
-        }
+            echo "Checking requirements.txt explicitly:"
+            ls -l requirements.txt || true
+
+            test -f manage.py
+            test -d polls
+            test -f requirements.txt
+        '''
+    }
+}
 
         stage('Install Nginx and Python') {
             steps {
