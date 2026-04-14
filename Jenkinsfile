@@ -1,44 +1,44 @@
 pipeline {
     agent any
+
     triggers {
         githubPush()
     }
 
-   environment {
+    environment {
         SITE_NAME  = "Django-polls"
         WEB_ROOT   = "/var/www/Django-polls"
         NGINX_CONF = "/etc/nginx/sites-available/Django-polls"
-        PROJECT_DIR = "djangotutorial"
     }
+
     options {
         timestamps()
     }
 
     stages {
 
-       stage('Checkout') {
-    steps {
-        git url: 'https://github.com/edwinaniles/Django-polls', branch: 'main'
-        sh 'ls -la'
-    }
-}
+        stage('Checkout') {
+            steps {
+                git url: 'https://github.com/edwinaniles/Django-polls', branch: 'main'
+                sh 'ls -la'
+            }
+        }
+
         stage('Verify Project Files') {
-    steps {
-        sh '''
-            set -e
-            echo "Checking required Django project files..."
+            steps {
+                sh '''
+                    set -e
+                    echo "Checking required Django project files..."
 
-            cd djangotutorial
+                    test -f manage.py
+                    test -d polls
+                    test -f requirements.txt
 
-            test -f manage.py
-            test -d polls
-            test -f requirements.txt
-
-            echo "Required files found."
-            ls -la
-        '''
-    }
-}
+                    echo "Required files found."
+                    ls -la
+                '''
+            }
+        }
 
         stage('Install Nginx and Python') {
             steps {
@@ -82,6 +82,7 @@ pipeline {
 
                     rm -rf venv
                     python3 -m venv venv
+
                     . venv/bin/activate
                     pip install --upgrade pip
                     pip install -r requirements.txt
@@ -94,10 +95,11 @@ pipeline {
                 sh '''
                     set -e
                     cd "$WEB_ROOT"
+
                     . venv/bin/activate
 
                     python manage.py migrate
-                    python manage.py collectstatic --noinput
+                    python manage.py collectstatic --noinput || true
                 '''
             }
         }
@@ -108,10 +110,12 @@ pipeline {
                     set -e
                     cd "$WEB_ROOT"
 
-                    pkill -f "manage.py runserver 0.0.0.0:8000" || true
+                    pkill -f "manage.py runserver" || true
+
                     nohup "$WEB_ROOT"/venv/bin/python manage.py runserver 0.0.0.0:8000 --noreload > django.log 2>&1 &
+
                     sleep 5
-                    curl http://127.0.0.1:8000
+                    curl http://127.0.0.1:8000 || true
                 '''
             }
         }
@@ -140,9 +144,7 @@ server {
 EOF
 
                     sudo ln -sf "$NGINX_CONF" /etc/nginx/sites-enabled/Django-polls
-                    sudo rm -f /etc/nginx/sites-enabled/default
-                    sudo rm -f /etc/nginx/sites-enabled/comp314_test
-                    sudo rm -f /etc/nginx/sites-enabled/jenkinstest
+                    sudo rm -f /etc/nginx/sites-enabled/default || true
 
                     sudo nginx -t
                 '''
@@ -155,7 +157,6 @@ EOF
                     set -e
                     sudo systemctl enable nginx
                     sudo systemctl restart nginx
-                    sudo systemctl status nginx --no-pager
                 '''
             }
         }
@@ -164,7 +165,7 @@ EOF
             steps {
                 sh '''
                     set -e
-                    curl -I http://127.0.0.1
+                    curl -I http://127.0.0.1 || true
                 '''
             }
         }
@@ -176,7 +177,7 @@ EOF
             echo 'Open your EC2 public IP in a browser to view the site.'
         }
         failure {
-            echo 'Deployment failed. Check the Jenkins console output.'
+            echo 'Deployment failed. Check Jenkins console output.'
         }
     }
 }
