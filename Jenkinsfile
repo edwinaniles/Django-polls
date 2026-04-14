@@ -4,40 +4,41 @@ pipeline {
         githubPush()
     }
 
-    environment {
+   environment {
         SITE_NAME  = "Django-polls"
         WEB_ROOT   = "/var/www/Django-polls"
         NGINX_CONF = "/etc/nginx/sites-available/Django-polls"
+        PROJECT_DIR = "djangotutorial"
     }
-
     options {
         timestamps()
     }
 
     stages {
 
-        stage('Checkout') {
-            steps {
-                git url: 'https://github.com/edwinaniles/Django-polls', branch: 'main'
-            }
-        }
-
+       stage('Checkout') {
+    steps {
+        git url: 'https://github.com/edwinaniles/Django-polls', branch: 'main'
+        sh 'ls -la'
+    }
+}
         stage('Verify Project Files') {
-            steps {
-                sh '''
-                    set -e
-                    echo "Checking required Django project files..."
+    steps {
+        sh '''
+            set -e
+            echo "Checking required Django project files..."
 
-                    test -f manage.py
-                    test -d mysite
-                    test -d polls
-                    test -f requirements.txt
+            cd djangotutorial
 
-                    echo "Required files found."
-                    ls -la
-                '''
-            }
-        }
+            test -f manage.py
+            test -d polls
+            test -f requirements.txt
+
+            echo "Required files found."
+            ls -la
+        '''
+    }
+}
 
         stage('Install Nginx and Python') {
             steps {
