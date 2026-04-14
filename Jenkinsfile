@@ -99,7 +99,7 @@ pipeline {
 
                     . venv/bin/activate
                     python manage.py migrate
-                    python manage.py collectstatic --noinput || true
+                    python manage.py collectstatic --noinput
                 '''
             }
         }
@@ -125,13 +125,13 @@ pipeline {
                 sh '''
                     set -e
 
-                    sudo tee "$NGINX_CONF" > /dev/null <<EOF
+                    sudo tee "$NGINX_CONF" > /dev/null <<'EOF'
 server {
     listen 80;
     server_name _;
 
     location /static/ {
-        alias /var/www/Django-polls/static/;
+        alias /var/www/Django-polls/staticfiles/;
     }
 
     location / {
